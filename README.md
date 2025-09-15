@@ -1,7 +1,7 @@
 # OpenGL Game Engine / Lesní bloudění
 Marta Šafářová
 
-##Zadání
+## Zadání
 
 Cílem mého projektu bylo vytvořit jednoduchý herní engine, který simuluje základní herní funkcionalitu.
 
