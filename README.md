@@ -1,5 +1,4 @@
 # OpenGL Game Engine / Lesní bloudění
-Marta Šafářová
 
 ## Zadání
 
