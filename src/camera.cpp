@@ -3,11 +3,11 @@
  * @brief Implementation of the Camera class for handling first-person and third-person camera views.
  */
 
+#include "lib.h"
 #include "camera.h"
-#include "pgr.h"
 #include <iostream>
 
- /**
+/**
   * @brief Constructs a Camera object and initializes the projection matrix.
   * @param windowWidth Width of the window in pixels.
   * @param windowHeight Height of the window in pixels.

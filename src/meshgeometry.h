@@ -6,13 +6,19 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "pgr.h"
+#include "glm/fwd.hpp"
+#include "glm/matrix.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include "data.h"
 
 #include <map>
 #include <iostream>
+#include <GL/gl.h>
 
- /**
+#include "assimp/Importer.hpp"
+#include "assimp/scene.h"
+
+/**
   * @struct Vertex
   * @brief Structure representing a single vertex with position, normal, texture coordinate, color, and skinning data.
   */

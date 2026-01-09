@@ -1,0 +1,21 @@
+# ninja log v6
+1	8	1768002388587404116	glm-populate-prefix/src/glm-populate-stamp/glm-populate-mkdir	65d1325b91a7643a
+1	8	1768002388587404116	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-mkdir	65d1325b91a7643a
+8	17153	1768002405732404639	glm-populate-prefix/src/glm-populate-stamp/glm-populate-download	7a87238dbf1a04ae
+8	17153	1768002405732404639	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-download	7a87238dbf1a04ae
+17153	17163	1768002405733404639	glm-populate-prefix/src/glm-populate-stamp/glm-populate-update	102d8420553a3399
+17153	17163	1768002405733404639	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-update	102d8420553a3399
+17164	17169	1768002405748404640	glm-populate-prefix/src/glm-populate-stamp/glm-populate-patch	6a194316fbf9dcb4
+17164	17169	1768002405748404640	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-patch	6a194316fbf9dcb4
+17169	17174	1768002405753404640	glm-populate-prefix/src/glm-populate-stamp/glm-populate-configure	6629364bad7850a7
+17169	17174	1768002405753404640	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-configure	6629364bad7850a7
+17174	17179	1768002405758404640	glm-populate-prefix/src/glm-populate-stamp/glm-populate-build	7846d6ff469dbb0e
+17174	17179	1768002405758404640	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-build	7846d6ff469dbb0e
+17179	17184	1768002405764404640	glm-populate-prefix/src/glm-populate-stamp/glm-populate-install	9145c0fb2198b5e0
+17179	17184	1768002405764404640	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-install	9145c0fb2198b5e0
+17184	17189	1768002405769404640	glm-populate-prefix/src/glm-populate-stamp/glm-populate-test	1132b94249602f9e
+17184	17189	1768002405769404640	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-test	1132b94249602f9e
+17189	17196	1768002405776404640	CMakeFiles/glm-populate-complete	87c7adda480d74d3
+17189	17196	1768002405776404640	glm-populate-prefix/src/glm-populate-stamp/glm-populate-done	87c7adda480d74d3
+17189	17196	1768002405776404640	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glm-subbuild/CMakeFiles/glm-populate-complete	87c7adda480d74d3
+17189	17196	1768002405776404640	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-done	87c7adda480d74d3

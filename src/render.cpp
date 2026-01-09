@@ -5,7 +5,7 @@
 
 #include <iostream>
 #include "render.h"
-#include "pgr.h"
+#include "lib.h"
 #include "data.h"
 #include "camera.h"
 #include "gamestate.h"

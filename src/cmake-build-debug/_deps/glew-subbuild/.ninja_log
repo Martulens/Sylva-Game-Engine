@@ -1,0 +1,21 @@
+# ninja log v6
+0	6	1768002405850404643	glew-populate-prefix/src/glew-populate-stamp/glew-populate-mkdir	44de6e9bc9a3bca3
+0	6	1768002405850404643	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glew-subbuild/glew-populate-prefix/src/glew-populate-stamp/glew-populate-mkdir	44de6e9bc9a3bca3
+6	653	1768002406497404662	glew-populate-prefix/src/glew-populate-stamp/glew-populate-download	d7e521ae8946774a
+6	653	1768002406497404662	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glew-subbuild/glew-populate-prefix/src/glew-populate-stamp/glew-populate-download	d7e521ae8946774a
+653	658	1768002406502404663	glew-populate-prefix/src/glew-populate-stamp/glew-populate-update	f2bc5742250eeb59
+653	658	1768002406502404663	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glew-subbuild/glew-populate-prefix/src/glew-populate-stamp/glew-populate-update	f2bc5742250eeb59
+658	663	1768002406507404663	glew-populate-prefix/src/glew-populate-stamp/glew-populate-patch	a7d8a19da0b9f436
+658	663	1768002406507404663	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glew-subbuild/glew-populate-prefix/src/glew-populate-stamp/glew-populate-patch	a7d8a19da0b9f436
+663	668	1768002406512404663	glew-populate-prefix/src/glew-populate-stamp/glew-populate-configure	7dbb391359af3e3d
+663	668	1768002406512404663	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glew-subbuild/glew-populate-prefix/src/glew-populate-stamp/glew-populate-configure	7dbb391359af3e3d
+668	673	1768002406517404663	glew-populate-prefix/src/glew-populate-stamp/glew-populate-build	d6baeb53c8c2b114
+668	673	1768002406517404663	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glew-subbuild/glew-populate-prefix/src/glew-populate-stamp/glew-populate-build	d6baeb53c8c2b114
+673	678	1768002406522404663	glew-populate-prefix/src/glew-populate-stamp/glew-populate-install	7e595abf58c35805
+673	678	1768002406522404663	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glew-subbuild/glew-populate-prefix/src/glew-populate-stamp/glew-populate-install	7e595abf58c35805
+678	683	1768002406527404663	glew-populate-prefix/src/glew-populate-stamp/glew-populate-test	c201fd45bd0962fc
+678	683	1768002406527404663	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glew-subbuild/glew-populate-prefix/src/glew-populate-stamp/glew-populate-test	c201fd45bd0962fc
+683	691	1768002406534404664	CMakeFiles/glew-populate-complete	c5015c2d357f2bb
+683	691	1768002406534404664	glew-populate-prefix/src/glew-populate-stamp/glew-populate-done	c5015c2d357f2bb
+683	691	1768002406534404664	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glew-subbuild/CMakeFiles/glew-populate-complete	c5015c2d357f2bb
+683	691	1768002406534404664	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/glew-subbuild/glew-populate-prefix/src/glew-populate-stamp/glew-populate-done	c5015c2d357f2bb

@@ -1,0 +1,21 @@
+# ninja log v6
+0	6	1768002406896404675	assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-mkdir	837944ba5b19b227
+0	6	1768002406896404675	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/assimp-subbuild/assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-mkdir	837944ba5b19b227
+6	46639	1768002453529406098	assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-download	798fd3a206d0f390
+6	46639	1768002453529406098	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/assimp-subbuild/assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-download	798fd3a206d0f390
+46639	46650	1768002453529406098	assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-update	5a5668bfe5121dab
+46639	46650	1768002453529406098	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/assimp-subbuild/assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-update	5a5668bfe5121dab
+46650	46656	1768002453545406098	assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-patch	3403e288893397c9
+46650	46656	1768002453545406098	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/assimp-subbuild/assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-patch	3403e288893397c9
+46656	46661	1768002453550406098	assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-configure	90dc0de09b116cf9
+46656	46661	1768002453550406098	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/assimp-subbuild/assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-configure	90dc0de09b116cf9
+46661	46667	1768002453556406099	assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-build	ab1579dc1d6303f8
+46661	46667	1768002453556406099	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/assimp-subbuild/assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-build	ab1579dc1d6303f8
+46667	46672	1768002453562406099	assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-install	ed4f31b2aaf6ffe7
+46667	46672	1768002453562406099	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/assimp-subbuild/assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-install	ed4f31b2aaf6ffe7
+46672	46677	1768002453567406099	assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-test	5ec7f79b69fa6511
+46672	46677	1768002453567406099	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/assimp-subbuild/assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-test	5ec7f79b69fa6511
+46677	46685	1768002453575406099	CMakeFiles/assimp-populate-complete	db6fdd774991f734
+46677	46685	1768002453575406099	assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-done	db6fdd774991f734
+46677	46685	1768002453575406099	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/assimp-subbuild/CMakeFiles/assimp-populate-complete	db6fdd774991f734
+46677	46685	1768002453575406099	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/assimp-subbuild/assimp-populate-prefix/src/assimp-populate-stamp/assimp-populate-done	db6fdd774991f734

@@ -4,7 +4,7 @@
  */
 
 #include "modeltexture.h"
-#include "pgr.h"
+#include "lib.h"
 #include <iostream>
 
  /**

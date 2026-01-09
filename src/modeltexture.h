@@ -5,10 +5,10 @@
 
 #ifndef MODELTEXTURE_H
 #define MODELTEXTURE_H
+#include <string>
+#include <GL/glew.h>
 
-#include "pgr.h"
-
- /**
+/**
   * @class ModelTexture
   * @brief Represents texture maps used for rendering materials of a 3D model.
   */

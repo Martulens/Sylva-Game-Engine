@@ -1,0 +1,21 @@
+# ninja log v6
+0	7	1768002454205406118	stb-populate-prefix/src/stb-populate-stamp/stb-populate-mkdir	5fc0f8ed6eb4371
+0	7	1768002454205406118	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/stb-subbuild/stb-populate-prefix/src/stb-populate-stamp/stb-populate-mkdir	5fc0f8ed6eb4371
+7	1348	1768002455546406159	stb-populate-prefix/src/stb-populate-stamp/stb-populate-download	93998b88476777b2
+7	1348	1768002455546406159	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/stb-subbuild/stb-populate-prefix/src/stb-populate-stamp/stb-populate-download	93998b88476777b2
+1348	1851	1768002455547406159	stb-populate-prefix/src/stb-populate-stamp/stb-populate-update	260fb5b6b1d49f26
+1348	1851	1768002455547406159	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/stb-subbuild/stb-populate-prefix/src/stb-populate-stamp/stb-populate-update	260fb5b6b1d49f26
+1851	1857	1768002456056406175	stb-populate-prefix/src/stb-populate-stamp/stb-populate-patch	aa3243cd2b9b6cf1
+1851	1857	1768002456056406175	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/stb-subbuild/stb-populate-prefix/src/stb-populate-stamp/stb-populate-patch	aa3243cd2b9b6cf1
+1857	1863	1768002456062406175	stb-populate-prefix/src/stb-populate-stamp/stb-populate-configure	409605139f8da90d
+1857	1863	1768002456062406175	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/stb-subbuild/stb-populate-prefix/src/stb-populate-stamp/stb-populate-configure	409605139f8da90d
+1863	1869	1768002456067406175	stb-populate-prefix/src/stb-populate-stamp/stb-populate-build	8b9086cd0a7b0e10
+1863	1869	1768002456067406175	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/stb-subbuild/stb-populate-prefix/src/stb-populate-stamp/stb-populate-build	8b9086cd0a7b0e10
+1869	1874	1768002456073406175	stb-populate-prefix/src/stb-populate-stamp/stb-populate-install	9a67b859afa5e692
+1869	1874	1768002456073406175	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/stb-subbuild/stb-populate-prefix/src/stb-populate-stamp/stb-populate-install	9a67b859afa5e692
+1874	1880	1768002456079406176	stb-populate-prefix/src/stb-populate-stamp/stb-populate-test	4e13b84802205dfe
+1874	1880	1768002456079406176	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/stb-subbuild/stb-populate-prefix/src/stb-populate-stamp/stb-populate-test	4e13b84802205dfe
+1880	1889	1768002456087406176	CMakeFiles/stb-populate-complete	f3bbb428deb40c40
+1880	1889	1768002456087406176	stb-populate-prefix/src/stb-populate-stamp/stb-populate-done	f3bbb428deb40c40
+1880	1889	1768002456087406176	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/stb-subbuild/CMakeFiles/stb-populate-complete	f3bbb428deb40c40
+1880	1889	1768002456087406176	/home/martul3ns/projects/OpenGL-Game-Engine/src/cmake-build-debug/_deps/stb-subbuild/stb-populate-prefix/src/stb-populate-stamp/stb-populate-done	f3bbb428deb40c40

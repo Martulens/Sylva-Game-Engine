@@ -6,7 +6,7 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-#include "pgr.h"
+#include "lib.h"
 #include "objects.h"
 #include "camera.h"
 #include "meshgeometry.h"
