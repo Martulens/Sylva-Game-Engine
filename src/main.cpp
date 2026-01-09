@@ -12,6 +12,8 @@
 #include <utility>
 #include <algorithm>
 
+#include "pgr.h"
+
 #include "data.h"
 #include "camera.h"
 #include "render.h"
