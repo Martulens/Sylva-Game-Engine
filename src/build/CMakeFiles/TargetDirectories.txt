@@ -1,3 +1,0 @@
-/home/martul3ns/projects/OpenGL-Game-Engine/src/build/CMakeFiles/PGR_Semestral.dir
-/home/martul3ns/projects/OpenGL-Game-Engine/src/build/CMakeFiles/edit_cache.dir
-/home/martul3ns/projects/OpenGL-Game-Engine/src/build/CMakeFiles/rebuild_cache.dir

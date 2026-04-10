@@ -6,9 +6,8 @@
 #ifndef CAMERA_CLASS_H
 #define CAMERA_CLASS_H
 
+#include "pgr.h"
 #include "objects.h"
-#include "glm/glm.hpp"
-#include "lib.h"
 
 class Player;
 

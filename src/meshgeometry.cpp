@@ -4,10 +4,7 @@
  */
 
 #include "meshgeometry.h"
-
 #include "data.h"
-#include "lib.h"
-
 
 /**
  * @brief Constructor that loads a model from a file.

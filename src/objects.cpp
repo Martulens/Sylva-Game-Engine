@@ -10,6 +10,7 @@
 
 #include "data.h"
 #include "objects.h"
+#include "pgr.h"
 
 /**
  * @brief Constructs a renderable object with full resource initialization.

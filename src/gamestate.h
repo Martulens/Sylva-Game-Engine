@@ -6,8 +6,6 @@
 #ifndef GAMESTATE_H
 #define GAMESTATE_H
 
-#include "lib.h"
-
 #include "data.h"
 
  /**

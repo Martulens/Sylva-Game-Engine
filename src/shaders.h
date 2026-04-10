@@ -4,7 +4,7 @@
  */
 
 #pragma once
-#include "lib.h"
+#include "pgr.h"
 
  /**
   * @class ShaderProgram

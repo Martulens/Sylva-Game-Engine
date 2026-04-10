@@ -6,7 +6,7 @@
 #ifndef OBJECTS_H
 #define OBJECTS_H
 
-#include "lib.h"
+#include "pgr.h"
 #include "meshgeometry.h"
 #include "camera.h"
 #include "modeltexture.h"

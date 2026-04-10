@@ -6,13 +6,11 @@
 #ifndef DATA_H
 #define DATA_H
 
-#include "lib.h"
+#include "pgr.h"
 #include <stdio.h>
 #include <vector>
 
-#include "glm/vec3.hpp"
-
-/** @brief Default window width */
+ /** @brief Default window width */
 const int WINDOW_WIDTH = 1600;
 /** @brief Default window height */
 const int WINDOW_HEIGHT = 1000;
