@@ -4,6 +4,8 @@ A small real-time rendering engine written in modern C++ and OpenGL 3.3 core.
 Sylva generates a procedural forest, populates it with instanced vegetation,
 and renders an animated character inside a day/night-cycled scene.
 
+Created as [school project](https://cent.felk.cvut.cz/courses/PGR/archives/2024-2025/S-FIT/safarma4/). Further reworked to work without the pgrFramework and on any OS. Awaiting further reconstruction.
+
 <p align="center">
   <img src="screenshots/thumb1.png" alt="Planet 1" width="230"/>
   <img src="screenshots/thumb2.png" alt="Planet 1" width="230"/>
