@@ -6,7 +6,7 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "pgr.h"
+#include "sylva/sylva.h"
 #include "data.h"
 
 #include <map>
@@ -41,6 +41,8 @@ public:
     unsigned int numTriangles;     ///< Number of triangles in the mesh.
     float offsetToFeet = 0.0f;     ///< Offset to align mesh feet to origin.
 
+    float boundingRadiusXZ = 0.0f; ///< XZ-plane bounding radius in model space.
+
     std::vector<unsigned int> indices;   ///< Index data for triangles.
     std::vector<Vertex> vertices;        ///< Vertex data.
 
@@ -52,6 +54,12 @@ public:
     const aiScene* scene = nullptr;                    ///< Assimp scene data.
     Assimp::Importer importer;                         ///< Assimp importer instance.
     std::map<std::string, unsigned int> animationNameToIndex; ///< Optional animation name mapping.
+
+    unsigned int animationIndex          = 0;      ///< Index of the default (idle/wave) animation.
+    unsigned int runAnimationIndex       = 0;      ///< Index of the run animation.
+    float        animationTicksPerSecond = 25.0f;  ///< Ticks per second for the scene's animations.
+    float        animationDuration       = 0.0f;   ///< Duration of the default animation in ticks.
+    float        runAnimationDuration    = 0.0f;   ///< Duration of the run animation in ticks.
 
     MeshGeometry() = default;
 
@@ -76,13 +84,6 @@ public:
      * @brief Generates a sphere mesh with defined resolution.
      */
     void generateSimpleSphereMesh();
-
-    /**
-     * @brief Processes bone hierarchy recursively.
-     * @param node Pointer to the current node.
-     * @param mat Transformation from parent.
-     */
-    void processNodeHierarchy(aiNode* node, const glm::mat4& mat);
 
     /**
      * @brief Loads a model and extracts geometry and animation data.

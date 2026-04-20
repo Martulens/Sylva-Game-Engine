@@ -4,7 +4,7 @@
  */
 
 #pragma once
-#include "pgr.h"
+#include "sylva/sylva.h"
 
  /**
   * @class ShaderProgram

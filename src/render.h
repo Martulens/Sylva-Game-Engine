@@ -6,7 +6,7 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-#include "pgr.h"
+#include "sylva/sylva.h"
 #include "objects.h"
 #include "camera.h"
 #include "meshgeometry.h"
@@ -73,12 +73,5 @@ void drawSkybox(Skybox* skybox, Camera& cam, float sunFactor);
 void drawCross(Object cross);
 
 void drawText(const std::string& text, float x, float y, float scale, const glm::vec3& color);
-
-/**
- * @brief Loads a mesh from PGR framework-provided mesh data.
- * @param meshData Mesh data from PGR.
- * @return Pointer to the constructed MeshGeometry object.
- */
-MeshGeometry* loadMeshFromPGRData(const pgr::MeshData& meshData);
 
 #endif // RENDER_H

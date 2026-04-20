@@ -6,7 +6,7 @@
 #ifndef MODELTEXTURE_H
 #define MODELTEXTURE_H
 
-#include "pgr.h"
+#include "sylva/sylva.h"
 
  /**
   * @class ModelTexture

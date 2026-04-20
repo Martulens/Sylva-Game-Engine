@@ -1,9 +1,6 @@
-﻿/**
+/**
  * @file main.cpp
- * @brief Main rendering and game loop implementation.
- *
- * This file initializes the application, manages user input, controls game objects,
- * and runs the main loop that updates the game state and renders the scene.
+ * @brief Sylva application entry point — GLFW window, input, and main loop.
  */
 
 #include <iostream>
@@ -12,7 +9,8 @@
 #include <utility>
 #include <algorithm>
 
-#include "pgr.h"
+#include "sylva/sylva.h"
+#include <GLFW/glfw3.h>
 
 #include "data.h"
 #include "camera.h"
@@ -32,6 +30,12 @@ int yOffset = 0;
 bool leftMouseDown = false;
 bool rightMouseDown = false;
 
+static GLFWwindow* gWindow = nullptr;
+
+static double gLastRawMouseX = 0.0;
+static double gLastRawMouseY = 0.0;
+static bool gHaveLastRawMouse = false;
+
 // Trees and details data
 ModelTexture* treemapTexture = nullptr;
 std::vector<unsigned char> treemapPixels;
@@ -50,43 +54,34 @@ std::vector<std::pair<glm::vec3, float>> collisionSpheres;
  * @brief Stores all major in-game objects.
  */
 struct GameObjects {
-    Player* player;              ///< Pointer to the player.
-    Terrain* terrain;            ///< Pointer to the terrain.
-    
-    InstanceGroup trees;         ///< Group of tree instances.
-    InstanceGroup details;       ///< Group of decorative details.
-    InstanceGroup torches;       ///< Group of torches.
-    
-    Light sunSphere;             ///< Sun representation.
-    Light moonSphere;            ///< Moon representation.
-    
-    Skybox* skybox;              ///< Pointer to the skybox.
-    Object cross;                ///< Crosshair object.
+    Player* player;
+    Terrain* terrain;
+
+    InstanceGroup trees;
+    InstanceGroup details;
+    InstanceGroup torches;
+
+    Light sunSphere;
+    Light moonSphere;
+
+    Skybox* skybox;
+    Object cross;
 } gameObjects;
 
-/**
- * @brief Computes the sun's position in the sky based on time.
- * @param t Normalized time of day [0, 1].
- * @return Sun position as glm::vec3.
- */
+void updatePlayerAndCamera();
+void restartGame();
+void addTorch();
+
 glm::vec3 evaluateSunPosition(float t) {
     float angle = glm::radians(360.0f * (t - 0.4f));
     float radius = 500.0;
     return glm::vec3(radius * cos(angle), radius * sin(angle), 0.0f);
 }
 
-/**
- * @brief Computes the moon's position based on time.
- * @param t Normalized time of day [0, 1].
- * @return Moon position as glm::vec3.
- */
 glm::vec3 evaluateMoonPosition(float t) {
     return evaluateSunPosition(fmod(t + 0.5f, 1.0f)) + glm::vec3(0, 20.0f, 0);
 }
 
-/**
- * @brief Updates sun/moon position, direction, fog, and lighting settings.
- */
 void updateMoonSun() {
     if (gameState.advanceTime) {
         gameState.timeOfDay += 0.0001f;
@@ -115,31 +110,26 @@ void updateMoonSun() {
     float sunFactor = glm::clamp(gameObjects.sunSphere.position.y / 100.0f, 0.0f, 1.0f);
 
     if (gameState.isNight) {
-        // Night fog interpolation.
         gameObjects.moonSphere.skyColor = glm::mix(glm::vec3(0.02f, 0.02f, 0.08f),
-            glm::vec3(0.5f, 0.7f, 1.0f),
-            sunFactor);
+                                                   glm::vec3(0.5f, 0.7f, 1.0f),
+                                                   sunFactor);
         gameObjects.moonSphere.fogDensity = glm::mix(0.005f, 0.0001f, sunFactor);
         gameObjects.moonSphere.fogGradient = glm::mix(2.5f, 1.2f, sunFactor);
         gameObjects.moonSphere.brightness = 1.0f - sunFactor;
     }
     else {
-        // Day fog interpolation.
         gameObjects.sunSphere.skyColor = glm::mix(glm::vec3(0.02f, 0.02f, 0.08f),
-            glm::vec3(0.5f, 0.7f, 1.0f),
-            sunFactor);
+                                                  glm::vec3(0.5f, 0.7f, 1.0f),
+                                                  sunFactor);
         gameObjects.sunSphere.fogDensity = glm::mix(0.005f, 0.0001f, sunFactor);
         gameObjects.sunSphere.fogGradient = glm::mix(2.5f, 1.2f, sunFactor);
         gameObjects.sunSphere.brightness = sunFactor;
     }
 }
 
-/**
- * @brief Main scene rendering function.
- */
 void drawWindow() {
-    int w = glutGet(GLUT_WINDOW_WIDTH);
-    int h = glutGet(GLUT_WINDOW_HEIGHT);
+    int w = gameState.windowWidth;
+    int h = gameState.windowHeight;
 
     if (h == 0)
         h = 1;
@@ -153,12 +143,10 @@ void drawWindow() {
 
     glm::vec3 camDirection = gameObjects.player->direction;
     float angle = gameObjects.player->viewAngle;
-    
-    // Camera transition between each index.
-    if (gameState.isCameraTransitioning) {
-        gameState.cameraTransitionTime += 0.016f; 
 
-        // smoothstep
+    if (gameState.isCameraTransitioning) {
+        gameState.cameraTransitionTime += 0.016f;
+
         float tLinear = glm::clamp(gameState.cameraTransitionTime / 3.0f, 0.0f, 1.0f);
         float t = tLinear * tLinear * (3 - 2 * tLinear);
 
@@ -191,16 +179,13 @@ void drawWindow() {
                 mainCamera.distanceFromPlayer = 30.0f;
             }
         }
-
     }
     else {
-        // Camera animation on the spline.
         if (gameState.cameraIndex == 2 || gameState.cameraIndex == 3) {
             float speed = 0.05f;
 
-            // animation progresses
             if (gameState.cameraIndex == 3) {
-                gameState.splineAnimTime += 0.016f; 
+                gameState.splineAnimTime += 0.016f;
             }
 
             gameState.currentSplineT = fmod(gameState.splineAnimTime * speed, 1.0f);
@@ -209,13 +194,13 @@ void drawWindow() {
             glm::vec3 center = gameObjects.player->position;
 
             std::vector<glm::vec3> points = {
-                center + glm::vec3(-20, 80,   0),
-                center + glm::vec3(0, 90,  20),
-                center + glm::vec3(20, 80,   0),
+                center + glm::vec3(-20, 80, 0),
+                center + glm::vec3(0, 90, 20),
+                center + glm::vec3(20, 80, 0),
                 center + glm::vec3(0, 90, -20),
-                center + glm::vec3(-20, 80,   0),
-                center + glm::vec3(0, 90,  20),
-                center + glm::vec3(20, 80,   0),
+                center + glm::vec3(-20, 80, 0),
+                center + glm::vec3(0, 90, 20),
+                center + glm::vec3(20, 80, 0),
                 center + glm::vec3(0, 90, -20)
             };
 
@@ -224,7 +209,6 @@ void drawWindow() {
             int i = (int)splineT;
             float localT = splineT - i;
 
-            // Clamp to safe range to prevent out-of-bounds access
             i = glm::clamp(i, 0, segmentCount - 1);
 
             glm::vec3 p0 = points[i];
@@ -243,7 +227,6 @@ void drawWindow() {
     }
 
 
-    //Main drawing calls of all the visible objects due to the camera.
     glm::mat4 projectionMatrix = mainCamera.projectionMatrix;
     glm::mat4 viewMatrix = mainCamera.viewMatrix;
 
@@ -258,8 +241,10 @@ void drawWindow() {
 
     Light& send = gameState.isNight ? gameObjects.moonSphere : gameObjects.sunSphere;
 
-    drawSun(gameObjects.sunSphere, gameObjects.torches, mainCamera, viewMatrix, projectionMatrix, false, gameState, gameObjects.player);
-    drawSun(gameObjects.moonSphere, gameObjects.torches, mainCamera, viewMatrix, projectionMatrix, true, gameState, gameObjects.player);
+    drawSun(gameObjects.sunSphere, gameObjects.torches, mainCamera, viewMatrix, projectionMatrix, false, gameState,
+            gameObjects.player);
+    drawSun(gameObjects.moonSphere, gameObjects.torches, mainCamera, viewMatrix, projectionMatrix, true, gameState,
+            gameObjects.player);
     CHECK_GL_ERROR();
 
     drawTerrain(gameObjects.terrain, gameObjects.torches, mainCamera, send, gameState, gameObjects.player);
@@ -273,13 +258,10 @@ void drawWindow() {
     drawPlayer(gameObjects.player, gameObjects.torches, mainCamera, send, gameState);
     CHECK_GL_ERROR();
 
-    if(mainCamera.firstPerson)
+    if (mainCamera.firstPerson)
         drawCross(gameObjects.cross);
     CHECK_GL_ERROR();
 
-    // edges
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    // fill
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glViewport(0, 0, gameState.windowWidth, gameState.windowHeight);
@@ -287,24 +269,12 @@ void drawWindow() {
     CHECK_GL_ERROR();
 }
 
-/**
- * @brief GLUT reshape callback.
- * @param w New window width.
- * @param h New window height.
- */
-void onReshape(int w, int h) {
+static void framebufferSizeCallback(GLFWwindow*, int w, int h) {
     gameState.windowWidth = w;
     gameState.windowHeight = h;
-
     glViewport(0, 0, (GLsizei)w, (GLsizei)h);
 }
 
-/**
- * @brief Generates object instances (trees/details) in nearby chunks.
- * @param worldX Player's world X position.
- * @param worldZ Player's world Z position.
- * @param type 0 = trees, 1 = details.
- */
 void generateInstancesNear(float worldX, float worldZ, int type) {
     int chunkX = static_cast<int>(worldX) / CHUNK_SIZE;
     int chunkZ = static_cast<int>(worldZ) / CHUNK_SIZE;
@@ -313,25 +283,22 @@ void generateInstancesNear(float worldX, float worldZ, int type) {
     float spacing = (type == 0) ? TREE_SPACING : DETAILS_SPACING;
 
     static std::set<std::pair<int, int>> generatedObjectChunks;
-    if (generatedTreeChunks.count({ chunkX, chunkZ }) > 0 && type == 0)
+    if (generatedTreeChunks.count({chunkX, chunkZ}) > 0 && type == 0)
         return;
-    if (generatedDetailsChunks.count({ chunkX, chunkZ }) > 0 && type == 1)
+    if (generatedDetailsChunks.count({chunkX, chunkZ}) > 0 && type == 1)
         return;
 
-    // Returns if the treemap is black or white -> if the tree can be generated
     auto isBlack = [&](int x, int y) -> bool {
         if (x < 0 || y < 0 || x >= treemapWidth || y >= treemapHeight) return false;
         return treemapPixels[y * treemapWidth + x] < 50;
     };
 
-    // Returns if the instance is not colliding with any other previously generated
     auto isFarEnough = [&](const glm::vec3& pos, const std::vector<glm::vec3>& existing, float minDist) {
         for (const auto& e : existing)
             if (glm::distance(e, pos) < minDist) return false;
         return true;
     };
 
-    // Mapped by index of the model, contains matrices for every single instance
     std::map<int, std::vector<glm::mat4>> newMatrices;
 
     float baseX = chunkX * CHUNK_SIZE;
@@ -339,7 +306,6 @@ void generateInstancesNear(float worldX, float worldZ, int type) {
 
     const int maxTries = 1000;
 
-    // Main generating loop
     for (int i = 0, tries = 0; i < count && tries < maxTries; ++tries) {
         float x = baseX + (rand() % CHUNK_SIZE);
         float z = baseZ + (rand() % CHUNK_SIZE);
@@ -354,7 +320,10 @@ void generateInstancesNear(float worldX, float worldZ, int type) {
             float y = gameObjects.terrain->getHeight(x, z);
             glm::vec3 pos(x, y - 0.5f, z);
 
-            if (glm::distance(pos, mainCamera.position) < 5.0f)
+            const glm::vec3 playerPos = gameObjects.player
+                                            ? gameObjects.player->position
+                                            : mainCamera.position;
+            if (glm::distance(pos, playerPos) < 5.0f)
                 continue;
 
             if (isFarEnough(pos, placedPositions, spacing)) {
@@ -384,20 +353,14 @@ void generateInstancesNear(float worldX, float worldZ, int type) {
             gameObjects.details.addInstances(newMatrices);
     }
 
-    if(type == 0)
-        generatedTreeChunks.insert({ chunkX, chunkZ });
-    if(type == 1)
-        generatedDetailsChunks.insert({ chunkX, chunkZ });
-
+    if (type == 0)
+        generatedTreeChunks.insert({chunkX, chunkZ});
+    if (type == 1)
+        generatedDetailsChunks.insert({chunkX, chunkZ});
 }
 
-/**
- * @brief Checks for collision with scene objects.
- * @param newPos Position to check.
- * @return True if colliding.
- */
 bool isColliding(glm::vec3 newPos) {
-    float playerRadius = 0.5f; // Adjust as needed
+    float playerRadius = 0.5f;
     for (const auto& pair : collisionSpheres) {
         auto objPos = pair.first;
         auto radius = pair.second;
@@ -409,52 +372,39 @@ bool isColliding(glm::vec3 newPos) {
     return false;
 }
 
-/**
- * @brief Updates player animation state.
- * @param deltaTime Time delta from last frame.
- */
 void updatePlayer(float deltaTime) {
-
     bool isMoving = gameState.keyMap[KEY_UP_ARROW] || gameState.keyMap[KEY_DOWN_ARROW] ||
         gameState.keyMap[KEY_LEFT_ARROW] || gameState.keyMap[KEY_RIGHT_ARROW];
 
     if (isMoving) {
         gameObjects.player->state = RUNNING;
+    } else if (gameObjects.player->state != WAVING) {
+        gameObjects.player->state = IDLE;
+    }
 
-        float tps = gameObjects.player->geometry->scene->mAnimations[0]->mTicksPerSecond;
-        if (tps == 0.0f) tps = 25.0f;
+    MeshGeometry* geo = gameObjects.player->geometry;
+    const float tps = geo->animationTicksPerSecond;
 
-        float animStart = gameObjects.player->runStart;
-        float animEnd = gameObjects.player->runEnd;
-        float animDuration = animEnd - animStart;
+    float duration = 0.0f;
+    switch (gameObjects.player->state) {
+        case RUNNING: duration = geo->runAnimationDuration; break;
+        case WAVING:  duration = geo->animationDuration;    break;
+        case IDLE:
+        default:      duration = 0.0f;                      break;
+    }
 
+    if (duration > 0.0f) {
         gameObjects.player->animationTime += deltaTime * tps;
-        if (gameObjects.player->animationTime > animEnd)
-            gameObjects.player->animationTime = animStart + fmod(gameObjects.player->animationTime - animStart, animDuration);
-
+        if (gameObjects.player->animationTime > duration)
+            gameObjects.player->animationTime = fmod(gameObjects.player->animationTime, duration);
     }
     else {
-        gameObjects.player->state = IDLE;
-
-        float tps = gameObjects.player->geometry->scene->mAnimations[0]->mTicksPerSecond;
-        if (tps == 0.0f) tps = 25.0f;
-
-        float animStart = 0.0f;
-        float animEnd = 0.1f;
-        float animDuration = animEnd - animStart;
-
-        gameObjects.player->animationTime += deltaTime * tps;
-        if (gameObjects.player->animationTime > animEnd)
-            gameObjects.player->animationTime = animStart + fmod(gameObjects.player->animationTime - animStart, animDuration);
-
+        gameObjects.player->animationTime = 0.0f;
     }
 }
 
-/**
- * @brief Updates both player and camera positions and animations.
- */
 void updatePlayerAndCamera() {
-    float timeNow = 0.001f * (float)glutGet(GLUT_ELAPSED_TIME);
+    float timeNow = sylva::elapsedSeconds();
     float deltaTime = timeNow - gameObjects.player->currTime;
     gameObjects.player->currTime = timeNow;
     glm::vec3 moveVector(0.0f);
@@ -487,7 +437,6 @@ void updatePlayerAndCamera() {
         );
     }
 
-    // Checks if the new position is colliding
     if (isColliding(gameObjects.player->position)) {
         gameObjects.player->position = prevPosition;
     }
@@ -498,13 +447,12 @@ void updatePlayerAndCamera() {
     }
 
     float height = gameObjects.terrain->getHeight(gameObjects.player->position.x,
-        gameObjects.player->position.z);
+                                                  gameObjects.player->position.z);
     gameObjects.player->position.y = height + 0.1;
 
     if (!gameState.isCameraTransitioning)
         mainCamera.update(gameObjects.player, gameState.windowWidth, gameState.windowHeight);
 
-    // generates instances for the new chunk.
     generateInstancesNear(gameObjects.player->position.x, gameObjects.player->position.z, 0);
     generateInstancesNear(gameObjects.player->position.x, gameObjects.player->position.z, 1);
 
@@ -514,14 +462,11 @@ void updatePlayerAndCamera() {
     updatePlayer(deltaTime);
 }
 
-/**
- * @brief Displays FPS counter in terminal.
- */
 void FPS() {
     static float lastTime = 0.0f;
     static int frameCount = 0;
 
-    float currentTime = 0.001f * glutGet(GLUT_ELAPSED_TIME);
+    float currentTime = sylva::elapsedSeconds();
     frameCount++;
 
     if (currentTime - lastTime >= 1.0f) {
@@ -531,27 +476,19 @@ void FPS() {
     }
 }
 
-/**
- * @brief GLUT display callback. Triggers rendering and updating.
- */
-void onDisplay() {
+static void renderFrame() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     CHECK_GL_ERROR();
     drawWindow();
     updatePlayerAndCamera();
 
-
     CHECK_GL_ERROR();
-    glutSwapBuffers();
-    glutPostRedisplay();
+    glfwSwapBuffers(gWindow);
 
     FPS();
 }
 
-/**
- * @brief Cleans up all allocated scene objects.
- */
 void cleanUpObjects() {
     if (gameObjects.player)
         delete gameObjects.player;
@@ -559,16 +496,13 @@ void cleanUpObjects() {
         delete gameObjects.terrain;
     if (gameObjects.skybox)
         delete gameObjects.skybox;
-    
+
     generatedTreeChunks.clear();
     generatedDetailsChunks.clear();
     placedPositions.clear();
     collisionSpheres.clear();
 }
 
-/**
- * @brief Initializes player with position and animation.
- */
 void initPlayer() {
     float x = 450.0f + rand() % 100;
     float z = 550.0f + rand() % 100;
@@ -581,18 +515,15 @@ void initPlayer() {
     float height = gameObjects.terrain->getHeight(x, z);
     float y = height;
 
-    std::string name = "models/boy.fbx";
+    std::string name = "models/boy/runA.fbx";
     MeshGeometry* mesh = new MeshGeometry(name);
     ModelTexture* texture = new ModelTexture("textures/characters.png");
     ShaderProgram* shader = new ShaderProgram("player.vert", "player.frag");
 
-    gameObjects.player = new Player(glm::vec3(x, y, z), glm::normalize(glm::vec3(-1.0f, 0.0f, -1.0f)), mesh, texture, shader);
+    gameObjects.player = new Player(glm::vec3(x, y, z), glm::normalize(glm::vec3(-1.0f, 0.0f, -1.0f)), mesh, texture,
+                                    shader);
 }
 
-/**
- * @brief Initializes instanced object group (trees/details/torches).
- * @param i Object group index.
- */
 void initInstances(int i) {
     ModelTexture* map = new ModelTexture("textures/treemap.png");
     treemapTexture = map;
@@ -609,19 +540,16 @@ void initInstances(int i) {
     ModelTexture* texture = new ModelTexture("textures/texture_forest_solid.png");
     ShaderProgram* shader = new ShaderProgram("trees.vert", "trees.frag");
 
-    if(i == 1)
+    if (i == 1)
         gameObjects.details = InstanceGroup(emptyList, shader, texture, i);
-    else if(i == 0)
+    else if (i == 0)
         gameObjects.trees = InstanceGroup(emptyList, shader, texture, i);
     else {
-        ModelTexture* texture = new ModelTexture("textures/torch.png");
-        gameObjects.torches = InstanceGroup(emptyList, shader, texture, i);
+        ModelTexture* torchTex = new ModelTexture("textures/torch.png");
+        gameObjects.torches = InstanceGroup(emptyList, shader, torchTex, i);
     }
 }
 
-/**
- * @brief Initializes sun and moon light sources.
- */
 void initMoonSun() {
     MeshGeometry* mesh = new MeshGeometry();
     mesh->generateSimpleSphereMesh();
@@ -638,9 +566,6 @@ void initMoonSun() {
     gameObjects.moonSphere.isMoon = true;
 }
 
-/**
- * @brief Initializes the crosshair mesh.
- */
 void initCross() {
     MeshGeometry* mesh = new MeshGeometry();
     mesh->createCross();
@@ -652,9 +577,6 @@ void initCross() {
     gameObjects.cross = Object(mesh, shader);
 }
 
-/**
- * @brief Initializes terrain geometry and texture.
- */
 void initTerrain() {
     ModelTexture grass = ModelTexture(
         "textures/grassB.png",
@@ -687,20 +609,15 @@ void initTerrain() {
 
     TexturePack pack = TexturePack(grass, sand, water, tiles);
     gameObjects.terrain = new Terrain(0, 0, pack, new ModelTexture("textures/blendmapD.png"));
-
 }
 
-/**
- * @brief Restarts the game, reinitializes all objects and states.
- */
 void restartGame() {
-    // Show loading screen
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);  // black background
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     cleanUpObjects();
-    gameState.elapsedTime = 0.001f * (float)glutGet(GLUT_ELAPSED_TIME);
-        
+    gameState.elapsedTime = sylva::elapsedSeconds();
+
     gameObjects.skybox = new Skybox("skybox.vert", "skybox.frag");
 
     initTerrain();
@@ -709,7 +626,7 @@ void restartGame() {
     initInstances(0);
     initInstances(1);
     initInstances(2);
-    
+
     initMoonSun();
     initCross();
 
@@ -722,8 +639,8 @@ void restartGame() {
         }
     }
 
-    int w = glutGet(GLUT_WINDOW_WIDTH);
-    int h = glutGet(GLUT_WINDOW_HEIGHT);
+    int w = gameState.windowWidth;
+    int h = gameState.windowHeight;
 
     if (h == 0)
         h = 1;
@@ -734,22 +651,15 @@ void restartGame() {
     mainCamera = Camera(w, h, camPosition, direction, angle);
 }
 
-/**
- * @brief Performs application-level initialization and OpenGL state setup.
- */
 void initApp() {
     srand((unsigned int)time(NULL));
 
-    //background
     glClearColor(0.5f, 0.4f, 0.8f, 1.0f);
     glEnable(GL_DEPTH_TEST);
 
     restartGame();
 }
 
-/**
- * @brief Frees resources before exiting the application.
- */
 void finalizeApp() {
     if (gameObjects.skybox) {
         delete gameObjects.skybox;
@@ -759,9 +669,6 @@ void finalizeApp() {
     cleanUpObjects();
 }
 
-/**
- * @brief Adds a new torch at raycast hit location from camera center.
- */
 void addTorch() {
     int centerX = gameState.windowWidth / 2;
     int centerY = gameState.windowHeight / 2;
@@ -773,8 +680,8 @@ void addTorch() {
     glm::vec3 position;
 
     int i = 0;
-    while(i <= 1000){
-        current += rayDirection * 0.1f;  // small step
+    while (i <= 1000) {
+        current += rayDirection * 0.1f;
         float terrainHeight = gameObjects.terrain->getHeight(current.x, current.z);
 
         if (current.y <= terrainHeight) {
@@ -798,188 +705,9 @@ void addTorch() {
     placedPositions.push_back(position);
     collisionSpheres.emplace_back(position, 1.5);
 
-    gameObjects.torches.addInstances(newMatrices);    
+    gameObjects.torches.addInstances(newMatrices);
 }
 
-/**
- * @brief Handles standard keyboard input.
- * @param keyPressed Pressed key.
- * @param mouseX Mouse X position.
- * @param mouseY Mouse Y position.
- */
-void keyboardCallback(unsigned char keyPressed, int mouseX, int mouseY) {
-    switch (keyPressed) {
-    case 27:
-        glutLeaveMainLoop();
-        break;
-    case 'r':
-        restartGame();
-        break;
-    case 'v': {
-        int current = gameState.cameraIndex;
-        int nextIndex = (current + 1) % 4;
-
-        // Skip transition between spline cameras
-        if ((current == 2 && nextIndex == 3) || (current == 3 && nextIndex == 2)) {
-            gameState.cameraIndex = nextIndex;
-            return;
-        }
-
-        gameState.cameraStartPos = mainCamera.position;
-        gameState.cameraStartLookAt = mainCamera.position + mainCamera.direction;
-
-        glm::vec3 center = gameObjects.player->position;
-        glm::vec3 targetPos, targetDir, targetLookAt;
-
-        if (nextIndex == 0) {
-            glm::vec3 forwardOffset = 1.75f * glm::normalize(gameObjects.player->direction);
-            targetPos = center + glm::vec3(0.0f, 4.5f, 0.0f) + 1.75f * gameObjects.player->direction;
-
-            targetDir = glm::normalize(gameObjects.player->direction);
-            targetLookAt = targetPos + targetDir;
-
-            if (glm::length(targetDir) < 0.001f)
-                targetDir = glm::vec3(0.0f, 0.0f, -1.0f);
-        }
-        else if (nextIndex == 1) {
-            float pitch = mainCamera.pitch;
-            float distance = mainCamera.distanceFromPlayer;
-            float horizontalDist = distance * cos(glm::radians(pitch));
-            float verticalDist = distance * sin(glm::radians(pitch));
-            float theta = glm::radians(mainCamera.angleAroundPlayer);
-
-            float offsetX = horizontalDist * sin(theta);
-            float offsetZ = horizontalDist * cos(theta);
-
-            targetPos = center - glm::vec3(offsetX, -verticalDist, offsetZ);
-            targetDir = glm::normalize(center - targetPos);
-            targetLookAt = center;
-        }
-        else if (nextIndex == 2 || nextIndex == 3) {
-            float t = gameState.currentSplineT;
-
-            std::vector<glm::vec3> points = {
-                center + glm::vec3(-20, 80,   0),
-                center + glm::vec3(0, 90,  20),
-                center + glm::vec3(20, 80,   0),
-                center + glm::vec3(0, 90, -20),
-                center + glm::vec3(-20, 80,   0),
-                center + glm::vec3(0, 90,  20),
-                center + glm::vec3(20, 80,   0),
-                center + glm::vec3(0, 90, -20)
-            };
-
-            int segmentCount = points.size() - 3;
-            float splineT = t * segmentCount;
-
-            int i = glm::clamp((int)splineT, 0, segmentCount - 1);
-            float localT = splineT - i;
-
-            glm::vec3 p0 = points[i];
-            glm::vec3 p1 = points[i + 1];
-            glm::vec3 p2 = points[i + 2];
-            glm::vec3 p3 = points[i + 3];
-
-            targetPos = catmullRomSpline(p0, p1, p2, p3, localT);
-            targetDir = glm::normalize(center - targetPos);
-            targetLookAt = center;
-        }
-
-        gameState.cameraTargetIndex = nextIndex;
-        gameState.cameraTargetPos = targetPos;
-        gameState.cameraTargetDir = targetDir;
-        gameState.cameraTargetLookAt = targetLookAt;
-
-        gameState.cameraTransitionTime = 0.0f;
-        gameState.isCameraTransitioning = true;
-        break;
-    }
-
-    case 'c':
-        if (gameState.cursor) {
-            gameState.cursor = false;
-            glutSetCursor(GLUT_CURSOR_NONE);
-        }
-        else {
-            gameState.cursor = true;
-            glutSetCursor(GLUT_CURSOR_INHERIT);
-        }
-        break;
-    case 'o':
-        mainCamera.pitch = 30.0f; 
-        break;
-    case 'p':
-        mainCamera.distanceFromPlayer = 20.0f; 
-        break;
-    case '\t': // Tab key
-        gameState.advanceTime = !gameState.advanceTime;
-        break;
-    case 'l':
-        gameState.flashlightOn = !gameState.flashlightOn;
-        std::cout << "flashlight: " << gameState.flashlightOn << std::endl;
-        break;
-    case 't':
-        addTorch();
-        break;
-    case 'b':
-        gameState.isBoy = !gameState.isBoy;
-        if (gameState.isBoy) {
-            std::string name = "models/boy.fbx";
-            gameObjects.player->geometry = new MeshGeometry(name);
-        }
-        else {
-            std::string name = "models/girl.fbx";
-            gameObjects.player->geometry = new MeshGeometry(name);
-        }
-
-    }
-
-    updatePlayerAndCamera();
-}
-
-/**
- * @brief Handles special key press events (arrow keys).
- * @param key Pressed special key.
- * @param x Mouse X.
- * @param y Mouse Y.
- */
-void onSpecialKeyPress(int key, int x, int y) {
-    switch (key) {
-    case GLUT_KEY_UP: gameState.keyMap[KEY_UP_ARROW] = true; break;
-    case GLUT_KEY_DOWN: gameState.keyMap[KEY_DOWN_ARROW] = true; break;
-    case GLUT_KEY_LEFT: gameState.keyMap[KEY_LEFT_ARROW] = true; break;
-    case GLUT_KEY_RIGHT: gameState.keyMap[KEY_RIGHT_ARROW] = true; break;
-    }
-}
-
-/**
- * @brief Handles special key release events.
- * @param key Released special key.
- * @param x Mouse X.
- * @param y Mouse Y.
- */
-void onSpecialKeyRelease(int key, int x, int y) {
-    switch (key) {
-    case GLUT_KEY_UP:
-        gameState.keyMap[KEY_UP_ARROW] = false; 
-        break;
-    case GLUT_KEY_DOWN: 
-        gameState.keyMap[KEY_DOWN_ARROW] = false; 
-        break;
-    case GLUT_KEY_LEFT: 
-        gameState.keyMap[KEY_LEFT_ARROW] = false; 
-        break;
-    case GLUT_KEY_RIGHT: 
-        gameState.keyMap[KEY_RIGHT_ARROW] = false; 
-        break;
-    }
-}
-
-/**
- * @brief Replaces removed tree with a new randomly chosen tree instance.
- * @param treePos Tree position.
- * @param mat Transformation matrix.
- */
 void changeTree(glm::vec3 treePos, glm::mat4& mat) {
     std::map<int, std::vector<glm::mat4>> newMatrices;
 
@@ -997,63 +725,196 @@ void changeTree(glm::vec3 treePos, glm::mat4& mat) {
     gameObjects.trees.addInstances(newMatrices);
 }
 
+static void cycleCameraView() {
+    int current = gameState.cameraIndex;
+    int nextIndex = (current + 1) % 4;
 
-/**
- * @brief Handles mouse button clicks.
- * @param button Clicked mouse button.
- * @param state State of the button.
- * @param x Mouse X.
- * @param y Mouse Y.
- */
-void onMouseClick(int button, int state, int x, int y) {
-    if (button == GLUT_LEFT_BUTTON) {
-        leftMouseDown = (state == GLUT_DOWN);
-    }
-    else if (button == GLUT_RIGHT_BUTTON) {
-        rightMouseDown = (state == GLUT_DOWN);
-    }
-
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
-        glm::vec3 rayOrigin = mainCamera.position;
-        glm::vec3 rayDirection = mainCamera.getMouseRay(x, y, gameState.windowWidth, gameState.windowHeight);
-
-        for (int meshIndex = 0; meshIndex < gameObjects.trees.instanceMatrices.size(); ++meshIndex) {
-            auto size = gameObjects.trees.instanceMatrices[meshIndex].size();
-            for (int k = 0; k < size; ++k) {
-                glm::mat4 mat = gameObjects.trees.instanceMatrices[meshIndex][k];
-                glm::vec3 treePos = glm::vec3(mat[3]);
-
-                glm::vec3 halfExtents(1.0f, 10.0f, 1.0f);
-                glm::vec3 boxMin = treePos - halfExtents;
-                glm::vec3 boxMax = treePos + halfExtents;
-
-                if (mainCamera.rayIntersectsAABB(rayOrigin, rayDirection, boxMin, boxMax)) {
-                    gameObjects.trees.instanceMatrices[meshIndex].erase(
-                        gameObjects.trees.instanceMatrices[meshIndex].begin() + k);
-                    gameObjects.trees.updateInstanceBuffer(meshIndex);
-
-                    changeTree(treePos, mat);
-                    return;
-                }
-            }
-        }
-
-    }
-}
-
-/**
- * @brief Handles mouse movement (drag or passive).
- * @param x Mouse X.
- * @param y Mouse Y.
- */
-void onMouseMove(int x, int y) {
-    if (gameState.cursor) { 
-        std::cout << "cursor return" << std::endl;
+    if ((current == 2 && nextIndex == 3) || (current == 3 && nextIndex == 2)) {
+        gameState.cameraIndex = nextIndex;
         return;
     }
 
+    gameState.cameraStartPos = mainCamera.position;
+    gameState.cameraStartLookAt = mainCamera.position + mainCamera.direction;
+
+    glm::vec3 center = gameObjects.player->position;
+    glm::vec3 targetPos, targetDir, targetLookAt;
+
+    if (nextIndex == 0) {
+        targetPos = center + glm::vec3(0.0f, 4.5f, 0.0f) + 1.75f * gameObjects.player->direction;
+
+        targetDir = glm::normalize(gameObjects.player->direction);
+        targetLookAt = targetPos + targetDir;
+
+        if (glm::length(targetDir) < 0.001f)
+            targetDir = glm::vec3(0.0f, 0.0f, -1.0f);
+    }
+    else if (nextIndex == 1) {
+        float pitch = mainCamera.pitch;
+        float distance = mainCamera.distanceFromPlayer;
+        float horizontalDist = distance * cos(glm::radians(pitch));
+        float verticalDist = distance * sin(glm::radians(pitch));
+        float theta = glm::radians(mainCamera.angleAroundPlayer);
+
+        float offsetX = horizontalDist * sin(theta);
+        float offsetZ = horizontalDist * cos(theta);
+
+        targetPos = center - glm::vec3(offsetX, -verticalDist, offsetZ);
+        targetDir = glm::normalize(center - targetPos);
+        targetLookAt = center;
+    }
+    else if (nextIndex == 2 || nextIndex == 3) {
+        float t = gameState.currentSplineT;
+
+        std::vector<glm::vec3> points = {
+            center + glm::vec3(-20, 80, 0),
+            center + glm::vec3(0, 90, 20),
+            center + glm::vec3(20, 80, 0),
+            center + glm::vec3(0, 90, -20),
+            center + glm::vec3(-20, 80, 0),
+            center + glm::vec3(0, 90, 20),
+            center + glm::vec3(20, 80, 0),
+            center + glm::vec3(0, 90, -20)
+        };
+
+        int segmentCount = points.size() - 3;
+        float splineT = t * segmentCount;
+
+        int i = glm::clamp((int)splineT, 0, segmentCount - 1);
+        float localT = splineT - i;
+
+        glm::vec3 p0 = points[i];
+        glm::vec3 p1 = points[i + 1];
+        glm::vec3 p2 = points[i + 2];
+        glm::vec3 p3 = points[i + 3];
+
+        targetPos = catmullRomSpline(p0, p1, p2, p3, localT);
+        targetDir = glm::normalize(center - targetPos);
+        targetLookAt = center;
+    }
+
+    gameState.cameraTargetIndex = nextIndex;
+    gameState.cameraTargetPos = targetPos;
+    gameState.cameraTargetDir = targetDir;
+    gameState.cameraTargetLookAt = targetLookAt;
+
+    gameState.cameraTransitionTime = 0.0f;
+    gameState.isCameraTransitioning = true;
+}
+
+static void handleCharacterKey(char keyPressed) {
+    switch (keyPressed) {
+    case 'r':
+        restartGame();
+        break;
+    case 'v':
+        cycleCameraView();
+        break;
+    case 'c':
+        gameObjects.player->state = (gameObjects.player->state == WAVING) ? IDLE : WAVING;
+        gameObjects.player->animationTime = 0.0f;
+        break;
+    case 'm':
+        gameState.cursor = !gameState.cursor;
+        glfwSetInputMode(gWindow, GLFW_CURSOR,
+            gameState.cursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+        break;
+    case 'o':
+        mainCamera.pitch = 30.0f;
+        break;
+    case 'p':
+        mainCamera.distanceFromPlayer = 20.0f;
+        break;
+    case 'l':
+        gameState.flashlightOn = !gameState.flashlightOn;
+        std::cout << "flashlight: " << gameState.flashlightOn << std::endl;
+        break;
+    case 't':
+        addTorch();
+        break;
+    case 'b':
+        gameState.isBoy = !gameState.isBoy;
+        if (gameState.isBoy) {
+            std::string name = "models/boy/runA.fbx";
+            gameObjects.player->geometry = new MeshGeometry(name);
+        }
+        else {
+            std::string name = "models/girl/runA.fbx";
+            gameObjects.player->geometry = new MeshGeometry(name);
+        }
+        break;
+    }
+
+    updatePlayerAndCamera();
+}
+
+static void keyCallback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/) {
+    const bool pressed = (action == GLFW_PRESS || action == GLFW_REPEAT);
+    const bool released = (action == GLFW_RELEASE);
+
+    switch (key) {
+    // Arrow keys
+    case GLFW_KEY_UP: gameState.keyMap[KEY_UP_ARROW] = pressed;
+        return;
+    case GLFW_KEY_DOWN: gameState.keyMap[KEY_DOWN_ARROW] = pressed;
+        return;
+    case GLFW_KEY_LEFT: gameState.keyMap[KEY_LEFT_ARROW] = pressed;
+        return;
+    case GLFW_KEY_RIGHT: gameState.keyMap[KEY_RIGHT_ARROW] = pressed;
+        return;
+    // WASD
+    case GLFW_KEY_W: gameState.keyMap[KEY_UP_ARROW] = pressed;
+        return;
+    case GLFW_KEY_S: gameState.keyMap[KEY_DOWN_ARROW] = pressed;
+        return;
+    case GLFW_KEY_A: gameState.keyMap[KEY_LEFT_ARROW] = pressed;
+        return;
+    case GLFW_KEY_D: gameState.keyMap[KEY_RIGHT_ARROW] = pressed;
+        return;
+    default: break;
+    }
+
+    if (released) return;
+    if (action != GLFW_PRESS) return;
+
+    if (key == GLFW_KEY_ESCAPE) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+        return;
+    }
+
+    if (key == GLFW_KEY_TAB) {
+        gameState.advanceTime = !gameState.advanceTime;
+        return;
+    }
+
+    // Map printable ASCII to the original keyboard handler.
+    if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z) {
+        char lower = static_cast<char>('a' + (key - GLFW_KEY_A));
+        handleCharacterKey(lower);
+    }
+}
+
+static void cursorPosCallback(GLFWwindow* /*window*/, double rawX, double rawY) {
+    if (!gHaveLastRawMouse) {
+        gLastRawMouseX = rawX;
+        gLastRawMouseY = rawY;
+        gHaveLastRawMouse = true;
+        return;
+    }
+
+    double deltaX = rawX - gLastRawMouseX;
+    double deltaY = rawY - gLastRawMouseY;
+    gLastRawMouseX = rawX;
+    gLastRawMouseY = rawY;
+
+    if (gameState.cursor) return;
+
     int centerX = gameState.windowWidth / 2;
     int centerY = gameState.windowHeight / 2;
+
+    // Feed the existing pitch/yaw update with the synthesised "absolute" pos.
+    int x = centerX + static_cast<int>(deltaX);
+    int y = centerY + static_cast<int>(deltaY);
 
     lastMouseX = xOffset = x - gameState.windowWidth / 2;
     lastMouseY = yOffset = y - gameState.windowHeight / 2;
@@ -1064,7 +925,7 @@ void onMouseMove(int x, int y) {
     dx *= PLAYER_MOUSE_SENSITIVITY;
     dy *= PLAYER_MOUSE_SENSITIVITY;
 
-    glm::vec3 lookDir;
+    glm::vec3 lookDir(0.0f);
     if (mainCamera.firstPerson && gameObjects.player) {
         gameObjects.player->viewAngle -= dx;
         gameObjects.player->pitch += dy;
@@ -1091,72 +952,116 @@ void onMouseMove(int x, int y) {
         }
     }
 
-    mainCamera.update(gameObjects.player, -1, -1);
-    mainCamera.direction = glm::normalize(lookDir);
-
-    glutWarpPointer(centerX, centerY);
+    if (gameObjects.player)
+        mainCamera.update(gameObjects.player, -1, -1);
+    if (glm::length(lookDir) > 0.0001f)
+        mainCamera.direction = glm::normalize(lookDir);
 }
 
-/**
- * @brief Handles mouse scroll (wheel) input.
- * @param button Scroll button.
- * @param dir Direction of scroll.
- * @param x Mouse X.
- * @param y Mouse Y.
- */
-void onMouseScroll(int button, int dir, int x, int y) {
-    if (!mainCamera.firstPerson) {
-        mainCamera.zoom(dir * 2.0f);
-    }
+static void mouseButtonCallback(GLFWwindow* window, int button, int action, int /*mods*/) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT)
+        leftMouseDown = (action == GLFW_PRESS);
+    else if (button == GLFW_MOUSE_BUTTON_RIGHT)
+        rightMouseDown = (action == GLFW_PRESS);
 
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        double mx, my;
+        glfwGetCursorPos(window, &mx, &my);
+        int x = static_cast<int>(mx);
+        int y = static_cast<int>(my);
+
+        glm::vec3 rayOrigin = mainCamera.position;
+        glm::vec3 rayDirection = mainCamera.getMouseRay(x, y, gameState.windowWidth, gameState.windowHeight);
+
+        for (int meshIndex = 0; meshIndex < (int)gameObjects.trees.instanceMatrices.size(); ++meshIndex) {
+            auto size = gameObjects.trees.instanceMatrices[meshIndex].size();
+            for (int k = 0; k < (int)size; ++k) {
+                glm::mat4 mat = gameObjects.trees.instanceMatrices[meshIndex][k];
+                glm::vec3 treePos = glm::vec3(mat[3]);
+
+                glm::vec3 halfExtents(1.0f, 10.0f, 1.0f);
+                glm::vec3 boxMin = treePos - halfExtents;
+                glm::vec3 boxMax = treePos + halfExtents;
+
+                if (mainCamera.rayIntersectsAABB(rayOrigin, rayDirection, boxMin, boxMax)) {
+                    gameObjects.trees.instanceMatrices[meshIndex].erase(
+                        gameObjects.trees.instanceMatrices[meshIndex].begin() + k);
+                    gameObjects.trees.updateInstanceBuffer(meshIndex);
+
+                    changeTree(treePos, mat);
+                    return;
+                }
+            }
+        }
+    }
+}
+
+static void scrollCallback(GLFWwindow* /*window*/, double /*xoffset*/, double yoffset) {
+    if (!mainCamera.firstPerson) {
+        mainCamera.zoom(static_cast<float>(yoffset) * 2.0f);
+    }
     updatePlayerAndCamera();
 }
 
-/**
- * @brief Timer callback for periodic updates.
- * @param unused Unused parameter.
- */
-void timer(int) {
-    glutPostRedisplay();
-    glutTimerFunc(refreshTimeMs, timer, 0);
+static void glfwErrorCallback(int code, const char* description) {
+    std::fprintf(stderr, "[GLFW] error %d: %s\n", code, description);
 }
 
-/**
- * @brief Application entry point.
- * @param argc Argument count.
- * @param argv Argument values.
- * @return Exit status.
- */
 int main(int argc, char** argv) {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-    glutInitWindowPosition(0,0);
-    glutCreateWindow("PGR Semestral");
+    glfwSetErrorCallback(glfwErrorCallback);
 
+    if (!glfwInit())
+        sylva::dieWithError("glfwInit failed");
 
-    glutSetCursor(GLUT_CURSOR_NONE);
-    glutDisplayFunc(onDisplay);
-    glutReshapeFunc(onReshape);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, sylva::OGL_VER_MAJOR);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, sylva::OGL_VER_MINOR);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+    glfwWindowHint(GLFW_DEPTH_BITS, 24);
 
-    glutKeyboardFunc(keyboardCallback);
-    glutSpecialFunc(onSpecialKeyPress);
-    glutSpecialUpFunc(onSpecialKeyRelease);
-    
-    glutMouseFunc(onMouseClick);
-    glutMotionFunc(onMouseMove);
-    glutPassiveMotionFunc(onMouseMove);      
-    glutMouseWheelFunc(onMouseScroll);
+    gWindow = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Sylva", nullptr, nullptr);
+    if (!gWindow) {
+        glfwTerminate();
+        sylva::dieWithError("glfwCreateWindow failed");
+    }
 
-    timer(0);
+    glfwMakeContextCurrent(gWindow);
+    glfwSwapInterval(1);
 
-    if (!pgr::initialize(pgr::OGL_VER_MAJOR, pgr::OGL_VER_MINOR))
-        pgr::dieWithError("pgr init failed, required OpenGL not supported?");
+    if (!gladLoadGL((GLADloadfunc)glfwGetProcAddress))
+        sylva::dieWithError("Failed to load OpenGL (glad). OpenGL 3.3 core required.");
+
+    int fbW = 0, fbH = 0;
+    glfwGetFramebufferSize(gWindow, &fbW, &fbH);
+    gameState.windowWidth = fbW;
+    gameState.windowHeight = fbH;
+    glViewport(0, 0, fbW, fbH);
+
+    glfwSetFramebufferSizeCallback(gWindow, framebufferSizeCallback);
+    glfwSetKeyCallback(gWindow, keyCallback);
+    glfwSetMouseButtonCallback(gWindow, mouseButtonCallback);
+    glfwSetCursorPosCallback(gWindow, cursorPosCallback);
+    glfwSetScrollCallback(gWindow, scrollCallback);
+
+    glfwSetCursorPos(gWindow, fbW / 2.0, fbH / 2.0);
+    glfwSetInputMode(gWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (glfwRawMouseMotionSupported())
+        glfwSetInputMode(gWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
+    glfwShowWindow(gWindow);
+    glfwFocusWindow(gWindow);
 
     initApp();
 
-    glutCloseFunc(finalizeApp);
+    while (!glfwWindowShouldClose(gWindow)) {
+        renderFrame();
+        glfwPollEvents();
+    }
 
-    glutMainLoop();
+    finalizeApp();
+
+    glfwDestroyWindow(gWindow);
+    glfwTerminate();
     return 0;
 }

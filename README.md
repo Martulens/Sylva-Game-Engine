@@ -1,41 +1,124 @@
-# OpenGL Game Engine / Lesní bloudění
+# Sylva
 
-## Zadání
+A small real-time rendering engine written in modern C++ and OpenGL 3.3 core.
+Sylva generates a procedural forest, populates it with instanced vegetation,
+and renders an animated character inside a day/night-cycled scene.
 
-Cílem mého projektu bylo vytvořit jednoduchý herní engine, který simuluje základní herní funkcionalitu.
+<!-- Add a screenshot at docs/screenshot.png and uncomment:
+![Sylva in-game](docs/screenshot.png)
+-->
 
-Můj projekt generuje procedurální terén pomocí Perlin Noise a na ten následně dle předem dané mapy generuje a instančně renderuje objekty lesa - stromy, větve, kameny, houby atd. Tyto objekty se generují po chuncích vůči poloze hráče. Texturování terénu je vytvořeno pomocí multitextury, která je taktéž čtena z mapy, která každé barvě přiřazuje jednu texturu. Tyto dílčí textury jsou tvořeny PBR materiály. Takto tvořená voda se dokonce i pohybuje.
+## Features
 
-Scéna podporuje i denní cyklus. Dle toho je v danou chvíli osvětlena buď měsícem nebo sluncem. Měsíc se chová jako bodové světlo, zatímco slunce jako směrové. Dle denní doby je definována i hustota a barva mlhy, která se následně propočítává v jednotlivých shaderech.
+- **Procedural terrain** — height map built from multi-octave Perlin noise,
+  resampled per-vertex on a configurable grid.
+- **Chunk-based streaming** — trees and decorative details (bushes, stones,
+  flowers, mushrooms, grass) are generated on demand around the player, driven
+  by a grayscale tree-density map.
+- **Hardware instanced rendering** — each mesh type maintains a per-instance
+  matrix VBO and is drawn with `glDrawElementsInstanced`, so hundreds of trees
+  cost one draw call per species.
+- **Multi-layer PBR-style terrain** — four material layers (grass, sand, water,
+  tiles), each with base colour, normal, roughness, height and emissive maps,
+  blended through an RGB blend map sampled per fragment.
+- **Animated water** — UV scroll plus sinusoidal ripple applied to the "water"
+  blend layer in the terrain shader.
+- **Skeletal animation with GPU skinning** — FBX rigs loaded via Assimp, bone
+  offsets uploaded as a `mat4[256]` uniform, per-vertex 4-bone linear blend
+  skinning in the vertex shader. Animation key-frames sampled on the CPU per
+  frame from the full-rig take.
+- **Rigid sub-mesh binding** — sub-meshes that ship with zero skin weights
+  (head, hair, eyes, mouth on the bundled character) are bound as synthetic
+  bones attached to their host node in the skeleton so they follow the
+  skeleton's animation.
+- **Day/night cycle** — sun and moon orbit the scene, driving directional
+  light direction/colour, fog density/gradient and sky tint. Sun acts as a
+  directional light, moon as a point light.
+- **Dynamic lights** — up to 20 placeable point-light torches plus a player
+  flashlight implemented as a cut-off spotlight.
+- **Cube-mapped skybox** — six-face cubemap with blend factor driven by sun
+  elevation.
+- **Four camera modes** — first-person, third-person orbit, fixed top-down,
+  and an animated Catmull-Rom spline camera orbiting the player. Transitions
+  are smooth-stepped between modes.
+- **Scene interaction** — click a tree to replace it with a random species,
+  press `T` to place a torch at the crosshair's terrain intersection, `C` to
+  play a wave animation, `B` to switch between the bundled character models.
 
-Pokud ani to nestačí, implementace podporuje i baterku ve formě reflektoru a nebo louče, které zde jako bodová světla umístit do scény. Postava hráče je animována, na načtení modelu je použit skinning. Projekt podporuje i základní pohyb pomocí šipek a rozhlížení pomocí myši. Kamera má celkem 4 módy - první osoba z pohledu hráče, třetí osoba na hráče, z vrchu, z vrchu s pohybem po křivce. Ty mezi sebou umí plynule přecházet. Se scénou dále lze interagovat.
+## Build
 
-Dohromady tvoří jednoduchý lesní celek, který umožňuje hráči se v něm pohybovat a při každém zapnutí generuje jiný prostor.
+Sylva uses CMake with `FetchContent` to pull its dependencies, so a clean
+checkout builds with no manual library setup:
 
-## Ovládání
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+./build/sylva
+```
 
-Pohyb myši - rozhlížení
+Tested on Linux (GCC 15), macOS (Clang), and Windows (MSVC) via the GitHub
+Actions matrix in `.github/workflows/ci.yml`.
 
-Kliknutí na strom - změna modelu daného stromu
+### Requirements
 
-Šipky - pohyb hráče
+- CMake 3.20+
+- A C++17 compiler
+- OpenGL 3.3-capable GPU
+- Python 3 with `jinja2` (used at configure time by the glad generator)
+- On Linux: X11 development headers (`xorg-dev`, `libxkbcommon-dev`,
+  `libgl1-mesa-dev` on Debian/Ubuntu)
 
-R - restart scény
+## Controls
 
-V - změna pohledu kamery
+| Key(s)                 | Action                                             |
+|------------------------|----------------------------------------------------|
+| `W A S D` / Arrow keys | Move                                               |
+| Mouse                  | Look around                                        |
+| `V`                    | Cycle camera (first/third person, top-down, spline)|
+| `C`                    | Toggle wave animation                              |
+| `T`                    | Place torch at crosshair                           |
+| `B`                    | Switch character model                             |
+| `L`                    | Toggle flashlight                                  |
+| `Tab`                  | Toggle day/night progression                       |
+| `R`                    | Restart scene                                      |
+| `M`                    | Toggle cursor capture                              |
+| `O`                    | Reset third-person pitch                           |
+| `P`                    | Reset third-person distance                        |
+| Mouse click            | Replace clicked tree with a random one             |
+| `Esc`                  | Quit                                               |
 
-C - zapnutí/vypnutí kurzoru v první osobě
+## Tech stack
 
-O - defaultní pitch kamery ve třetí osobě
+| Area                | Library                            |
+|---------------------|------------------------------------|
+| Windowing / input   | GLFW 3.4                           |
+| GL function loader  | glad 2.0.6 (GL 3.3 core)           |
+| Math                | GLM 1.0.1                          |
+| Model loading       | Assimp 5.0.1 (FBX, OBJ, Collada, glTF) |
+| Texture loading     | stb_image                          |
+| Build               | CMake 3.20+ with FetchContent      |
+| CI                  | GitHub Actions, Linux + macOS + Windows |
 
-P - defaultní vzdálenost kamery ve třetí osobě
+## Project layout
 
-L - zapnutí/vypnutí baterky
+```
+src/
+  main.cpp              application entry, GLFW window, input, main loop
+  camera.{h,cpp}        view/projection + four camera modes
+  gamestate.{h,cpp}     global mutable state (time of day, keys, camera transition…)
+  terrain.{h,cpp}       procedural terrain generation and rendering
+  meshgeometry.{h,cpp}  FBX loading, skinning prep, bone hierarchy
+  modeltexture.{h,cpp}  PBR material loading
+  objects.{h,cpp}       Object/Skybox/Light/Player/InstanceGroup scene classes
+  render.{h,cpp}        uniform setup, draw routines for each object type
+  shaders.{h,cpp}       shader program wrapper with cached uniform locations
+  noise.{h,cpp}         2D Perlin noise
+  sylva/sylva.{h,cpp}   platform layer — texture/shader helpers, time
+  shaders/*.vert|.frag  GLSL sources
+  models/               FBX assets (character + trees + details)
+  textures/             PNGs for terrain layers, character, skybox, maps
+```
 
-T - postavení louče na místě Kliknutí
+## License
 
-B - změna postavičky
-
-TAB - zapnutí/vypnutí denního cyklus
-
-ESC - opuštění aplikace 
+Released under the MIT License.

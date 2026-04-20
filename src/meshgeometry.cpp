@@ -6,6 +6,30 @@
 #include "meshgeometry.h"
 #include "data.h"
 
+#include <assimp/config.h>
+#include <algorithm>
+
+namespace {
+
+const aiNode* findNodeWithMesh(const aiNode* node, unsigned int meshIndex) {
+    if (!node) return nullptr;
+    for (unsigned int i = 0; i < node->mNumMeshes; ++i)
+        if (node->mMeshes[i] == meshIndex) return node;
+    for (unsigned int i = 0; i < node->mNumChildren; ++i)
+        if (const aiNode* found = findNodeWithMesh(node->mChildren[i], meshIndex))
+            return found;
+    return nullptr;
+}
+
+glm::mat4 nodeWorldTransform(const aiNode* node) {
+    if (!node) return glm::mat4(1.0f);
+    glm::mat4 local = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
+    if (node->mParent) return nodeWorldTransform(node->mParent) * local;
+    return local;
+}
+
+} // namespace
+
 /**
  * @brief Constructor that loads a model from a file.
  * @param fileName Path to the model file.
@@ -23,33 +47,15 @@ MeshGeometry::MeshGeometry(const char* fileName) {
     loadModel(inputPath);
 }
 
-/**
- * @brief Recursively processes the node hierarchy to initialize bone mappings and transforms.
- * @param node Current Assimp node.
- * @param parentTransform Parent transformation matrix.
- */
-void MeshGeometry::processNodeHierarchy(aiNode* node, const glm::mat4& parentTransform) {
-    std::string nodeName(node->mName.C_Str());
-
-    glm::mat4 nodeTransform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
-    glm::mat4 globalTransform = parentTransform * nodeTransform;
-
-    if (boneMapping.find(nodeName) == boneMapping.end()) {
-        boneMapping[nodeName] = numBones++;
-        boneOffsets.push_back(glm::mat4(1.0f));
-        boneFinalTransforms.push_back(glm::mat4(1.0f));
-    }
-
-    for (unsigned int i = 0; i < node->mNumChildren; ++i) {
-        processNodeHierarchy(node->mChildren[i], globalTransform);
-    }
-}
 
 /**
  * @brief Loads a model file and extracts geometry, bones, and animation data.
  * @param fileName Path to the model file.
  */
 void MeshGeometry::loadModel(std::string& fileName) {
+    importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
+    importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, 4);
+
     scene = importer.ReadFile(fileName,
         aiProcess_Triangulate | aiProcess_FlipUVs |
         aiProcess_GenNormals | aiProcess_LimitBoneWeights);
@@ -58,8 +64,6 @@ void MeshGeometry::loadModel(std::string& fileName) {
         std::cerr << "ERROR::ASSIMP::" << importer.GetErrorString() << std::endl;
         return;
     }
-
-    processNodeHierarchy(scene->mRootNode, glm::mat4(1.0f));
 
     vertices.clear();
     indices.clear();
@@ -100,18 +104,18 @@ void MeshGeometry::loadModel(std::string& fileName) {
             for (unsigned int b = 0; b < mesh->mNumBones; ++b) {
                 std::string boneName(mesh->mBones[b]->mName.C_Str());
 
+                int boneIndex;
                 if (boneMapping.find(boneName) == boneMapping.end()) {
-                    boneMapping[boneName] = numBones++;
+                    boneIndex = numBones++;
+                    boneMapping[boneName] = boneIndex;
                     glm::mat4 offset = glm::transpose(glm::make_mat4(&mesh->mBones[b]->mOffsetMatrix.a1));
                     boneOffsets.push_back(offset);
                     boneFinalTransforms.push_back(glm::mat4(1.0f));
-                }
-                else {
-                    int index = boneMapping[boneName];
-                    boneOffsets[index] = glm::transpose(glm::make_mat4(&mesh->mBones[b]->mOffsetMatrix.a1));
+                } else {
+                    boneIndex = boneMapping[boneName];
+                    boneOffsets[boneIndex] = glm::transpose(glm::make_mat4(&mesh->mBones[b]->mOffsetMatrix.a1));
                 }
 
-                int boneIndex = boneMapping[boneName];
                 for (unsigned int w = 0; w < mesh->mBones[b]->mNumWeights; ++w) {
                     unsigned int vertexID = vertexOffset + mesh->mBones[b]->mWeights[w].mVertexId;
                     float weight = mesh->mBones[b]->mWeights[w].mWeight;
@@ -123,48 +127,100 @@ void MeshGeometry::loadModel(std::string& fileName) {
                         v.boneIDs[assigned] = boneIndex;
                         v.weights[assigned] = weight;
                         ++assigned;
-                    }
-                    else {
+                    } else {
                         std::cerr << "Vertex " << vertexID << " has too many bone weights.\n";
                     }
                 }
             }
+        } else {
+            const aiNode* host = findNodeWithMesh(scene->mRootNode, m);
+            const std::string hostName = host ? host->mName.C_Str()
+                                              : ("__rigid_mesh_" + std::to_string(m));
 
-            // Normalize or assign fallback bone
-            glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            for (size_t i = 0; i < vertices.size(); ++i) {
-                float totalWeight = vertices[i].weights[0] + vertices[i].weights[1] +
-                    vertices[i].weights[2] + vertices[i].weights[3];
+            int boneIndex;
+            if (boneMapping.find(hostName) == boneMapping.end()) {
+                boneIndex = numBones++;
+                boneMapping[hostName] = boneIndex;
+                boneOffsets.push_back(glm::mat4(1.0f));
+                boneFinalTransforms.push_back(glm::mat4(1.0f));
+            } else {
+                boneIndex = boneMapping[hostName];
+            }
 
-                if (totalWeight > 1.0f) {
-                    for (int j = 0; j < MAX_BONES_PER_VERTEX; ++j) {
-                        vertices[i].weights[j] /= totalWeight;
-                    }
-                }
-                else if (totalWeight <= 0.0f) {
-                    std::string fallbackBone = "default";
-                    if (boneMapping.find(fallbackBone) != boneMapping.end()) {
-                        int fallbackIndex = boneMapping[fallbackBone];
-                        vertices[i].boneIDs[0] = fallbackIndex;
-                        vertices[i].weights[0] = 1.0f;
-
-                        glm::vec3 pos = vertices[i].position * 0.0085f;
-                        pos = glm::vec3(rotationMatrix * glm::vec4(pos, 1.0f));
-                        vertices[i].position = pos;
-
-                    }
-                    else {
-                    }
-                }
+            for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
+                unsigned int vid = vertexOffset + i;
+                vertices[vid].boneIDs[0] = boneIndex;
+                vertices[vid].weights[0] = 1.0f;
+                bonesAssigned[vid]       = 1;
             }
         }
 
         vertexOffset += mesh->mNumVertices;
     }
 
+    boundingRadiusXZ = 0.0f;
+    for (unsigned int m = 0; m < scene->mNumMeshes; ++m) {
+        const aiMesh* mesh = scene->mMeshes[m];
+        glm::mat4 toModelSpace(1.0f);
+        if (!mesh->HasBones()) {
+            if (const aiNode* host = findNodeWithMesh(scene->mRootNode, m))
+                toModelSpace = nodeWorldTransform(host);
+        }
+        for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
+            glm::vec4 local(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z, 1.0f);
+            glm::vec3 modelPos = glm::vec3(toModelSpace * local);
+            float r = std::sqrt(modelPos.x * modelPos.x + modelPos.z * modelPos.z);
+            if (r > boundingRadiusXZ) boundingRadiusXZ = r;
+        }
+    }
+
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        float totalWeight = vertices[i].weights[0] + vertices[i].weights[1] +
+                            vertices[i].weights[2] + vertices[i].weights[3];
+        if (totalWeight > 1.0f) {
+            for (int j = 0; j < MAX_BONES_PER_VERTEX; ++j)
+                vertices[i].weights[j] /= totalWeight;
+        } else if (totalWeight <= 0.0f) {
+            vertices[i].boneIDs[0] = 0;
+            vertices[i].weights[0] = 1.0f;
+        }
+    }
+
+    if (scene->mNumAnimations > 0) {
+        animationIndex = 0;
+        unsigned int bestChannels = scene->mAnimations[0]->mNumChannels;
+        double       bestDuration = scene->mAnimations[0]->mDuration;
+        for (unsigned int a = 1; a < scene->mNumAnimations; ++a) {
+            const aiAnimation* anim = scene->mAnimations[a];
+            const bool better = (anim->mNumChannels > bestChannels) ||
+                                (anim->mNumChannels == bestChannels && anim->mDuration > bestDuration);
+            if (better) {
+                animationIndex = a;
+                bestChannels   = anim->mNumChannels;
+                bestDuration   = anim->mDuration;
+            }
+        }
+
+        runAnimationIndex = animationIndex;
+        for (unsigned int a = 0; a < scene->mNumAnimations; ++a) {
+            std::string name = scene->mAnimations[a]->mName.C_Str();
+            std::transform(name.begin(), name.end(), name.begin(),
+                [](unsigned char c) { return std::tolower(c); });
+            if (name.find("run") != std::string::npos) {
+                runAnimationIndex = a;
+                break;
+            }
+        }
+
+        const aiAnimation* chosen = scene->mAnimations[animationIndex];
+        animationTicksPerSecond = static_cast<float>(chosen->mTicksPerSecond);
+        if (animationTicksPerSecond <= 0.0f) animationTicksPerSecond = 25.0f;
+        animationDuration    = static_cast<float>(chosen->mDuration);
+        runAnimationDuration = static_cast<float>(scene->mAnimations[runAnimationIndex]->mDuration);
+    }
+
     offsetToFeet = -maxY;
     numTriangles = indices.size() / 3;
-
     loadVAO();
 }
 

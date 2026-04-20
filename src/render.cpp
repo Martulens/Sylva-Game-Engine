@@ -5,7 +5,7 @@
 
 #include <iostream>
 #include "render.h"
-#include "pgr.h"
+#include "sylva/sylva.h"
 #include "data.h"
 #include "camera.h"
 #include "gamestate.h"
@@ -77,7 +77,7 @@ void setupUniforms(ShaderProgram* shader, InstanceGroup& torches, Light& light, 
         glUniform3f(glGetUniformLocation(shader->program, uniformName.c_str()), 1.0f, 0.5f, 0.2f);
     }
 
-    float currentTime = 0.001f * glutGet(GLUT_ELAPSED_TIME); // Convert to seconds
+    float currentTime = sylva::elapsedSeconds();
     GLint timeLoc = glGetUniformLocation(shader->program, "time");
     glUniform1f(timeLoc, currentTime);
 }
@@ -189,12 +189,22 @@ unsigned int findKeyframeIndex(double time, unsigned int count, const aiVectorKe
  * @param parentTransform Parent transformation matrix.
  * @param mesh Pointer to the mesh geometry.
  */
-void readNodeHeirarchy(float animationTime, const aiNode* node, const glm::mat4& parentTransform, MeshGeometry* mesh) {
+void readNodeHeirarchy(float animationTime, unsigned int animIndex, const aiNode* node, const glm::mat4& parentTransform, MeshGeometry* mesh) {
     std::string nodeName(node->mName.C_Str());
 
     glm::mat4 nodeTransform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
 
-    const aiAnimation* animation = mesh->scene->mAnimations[0];
+    if (mesh->scene->mNumAnimations == 0 || animIndex >= mesh->scene->mNumAnimations) {
+        glm::mat4 globalTransform = parentTransform * nodeTransform;
+        if (mesh->boneMapping.count(nodeName)) {
+            int boneIndex = mesh->boneMapping[nodeName];
+            mesh->boneFinalTransforms[boneIndex] = globalTransform * mesh->boneOffsets[boneIndex];
+        }
+        for (unsigned int i = 0; i < node->mNumChildren; ++i)
+            readNodeHeirarchy(animationTime, animIndex, node->mChildren[i], globalTransform, mesh);
+        return;
+    }
+    const aiAnimation* animation = mesh->scene->mAnimations[animIndex];
     const aiNodeAnim* nodeAnim = nullptr;
 
     for (unsigned int i = 0; i < animation->mNumChannels; ++i) {
@@ -278,7 +288,7 @@ void readNodeHeirarchy(float animationTime, const aiNode* node, const glm::mat4&
     }
 
     for (unsigned int i = 0; i < node->mNumChildren; ++i) {
-        readNodeHeirarchy(animationTime, node->mChildren[i], globalTransform, mesh);
+        readNodeHeirarchy(animationTime, animIndex, node->mChildren[i], globalTransform, mesh);
     }
 }
 
@@ -319,7 +329,10 @@ void drawCross(Object cross) {
 void drawPlayer(Player* player, InstanceGroup& torches, Camera& cam, Light& light, GameState& gameState) {
     glUseProgram(player->shader->program);
 
-    readNodeHeirarchy(player->animationTime, player->geometry->scene->mRootNode, glm::mat4(1.0f), player->geometry);
+    const unsigned int animIdx = (player->state == RUNNING)
+        ? player->geometry->runAnimationIndex
+        : player->geometry->animationIndex;
+    readNodeHeirarchy(player->animationTime, animIdx, player->geometry->scene->mRootNode, glm::mat4(1.0f), player->geometry);
     setupUniforms(player->shader, torches, light, cam, player->texture, gameState, player->position, player->direction);
 
     float angle = atan2(player->renderFacingDirection.x, player->renderFacingDirection.z);
@@ -330,7 +343,8 @@ void drawPlayer(Player* player, InstanceGroup& torches, Camera& cam, Light& ligh
 
     glUniformMatrix4fv(player->shader->transformationMatrix, 1, GL_FALSE, glm::value_ptr(modelMatrix));
     GLint bonesUniform = glGetUniformLocation(player->shader->program, "bones");
-    glUniformMatrix4fv(bonesUniform, player->geometry->numBones, GL_FALSE,
+    const int bonesToUpload = std::min(player->geometry->numBones, MAX_BONES);
+    glUniformMatrix4fv(bonesUniform, bonesToUpload, GL_FALSE,
         glm::value_ptr(player->geometry->boneFinalTransforms[0]));
 
 

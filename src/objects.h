@@ -6,7 +6,7 @@
 #ifndef OBJECTS_H
 #define OBJECTS_H
 
-#include "pgr.h"
+#include "sylva/sylva.h"
 #include "meshgeometry.h"
 #include "camera.h"
 #include "modeltexture.h"
@@ -20,20 +20,20 @@
   */
 class Object {
 public:
-    glm::vec3 position;           ///< Object world position.
-    glm::vec3 direction;          ///< Facing direction (optional use).
+    glm::vec3 position   = glm::vec3(0.0f);                  ///< Object world position.
+    glm::vec3 direction  = glm::vec3(0.0f, 0.0f, -1.0f);     ///< Facing direction (optional use).
     float rotationY = 0.0f;       ///< Y-axis rotation.
-    glm::mat4 modelMatrix;        ///< Model transformation matrix.
+    glm::mat4 modelMatrix = glm::mat4(1.0f); ///< Model transformation matrix.
 
     float speed = 0.1f;           ///< Optional speed for movement.
-    float size;                   ///< Optional size scalar.
+    float size = 1.0f;            ///< Optional size scalar.
 
-    float starTime;               ///< Custom timer start.
-    float currTime;               ///< Current time value.
+    float starTime = 0.0f;        ///< Custom timer start.
+    float currTime = 0.0f;        ///< Current time value.
 
-    ShaderProgram* shader;        ///< Pointer to shader used for this object.
-    MeshGeometry* geometry;       ///< Pointer to mesh geometry.
-    ModelTexture* texture;        ///< Pointer to object's texture(s).
+    ShaderProgram* shader  = nullptr;   ///< Pointer to shader used for this object.
+    MeshGeometry* geometry = nullptr;   ///< Pointer to mesh geometry.
+    ModelTexture* texture  = nullptr;   ///< Pointer to object's texture(s).
 
     Object() = default;
     Object(glm::vec3 position);
@@ -139,7 +139,7 @@ public:
 
     PlayerState state = IDLE;              ///< Current player state.
 
-    glm::vec3 renderFacingDirection;       ///< Direction for visual rotation.
+    glm::vec3 renderFacingDirection = glm::vec3(0.0f, 0.0f, -1.0f); ///< Direction for visual rotation.
     float viewAngle = 0.0f;                ///< Yaw.
     float pitch = 0.0f;                    ///< Pitch.
 
@@ -150,7 +150,7 @@ public:
     float runEnd = 45.0f;                  ///< End tick of running animation.
 
     bool idle = true;                      ///< Flag if idle animation should play.
-    unsigned int currentAnimIndex;         ///< Current animation index.
+    unsigned int currentAnimIndex = 0;     ///< Current animation index.
 
     /**
      * @brief Draws the animated player.

@@ -10,7 +10,7 @@ layout (location = 5) in vec4 weights;
 uniform mat4 transformationMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
-uniform mat4 bones[100];
+uniform mat4 bones[256];
 
 uniform bool isPointLight;
 

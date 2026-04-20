@@ -4,7 +4,7 @@
  */
 
 #include "modeltexture.h"
-#include "pgr.h"
+#include "sylva/sylva.h"
 #include <iostream>
 
  /**
@@ -21,15 +21,27 @@ ModelTexture::ModelTexture(const std::string& baseColor,
     const std::string& roughness,
     const std::string& heightTex,
     const std::string& emissive) {
-    baseColorID = pgr::createTexture(baseColor);
-    normalID = pgr::createTexture(normal);
-    roughnessID = pgr::createTexture(roughness);
-    heightID = pgr::createTexture(heightTex);
-    emissiveID = pgr::createTexture(emissive);
+    baseColorID = sylva::createTexture(baseColor);
+    normalID    = sylva::createTexture(normal);
+    roughnessID = sylva::createTexture(roughness);
+    heightID    = sylva::createTexture(heightTex);
+    emissiveID  = sylva::createTexture(emissive);
 
     if (baseColorID == 0) {
         std::cerr << "Failed to load base color texture: " << baseColor << std::endl;
         exit(EXIT_FAILURE);
+    }
+
+    struct { GLuint id; const std::string& path; const char* kind; } pbrMaps[] = {
+        { normalID,    normal,    "normal"    },
+        { roughnessID, roughness, "roughness" },
+        { heightID,    heightTex, "height"    },
+        { emissiveID,  emissive,  "emissive"  },
+    };
+    for (const auto& m : pbrMaps) {
+        if (m.id == 0) {
+            std::cerr << "Warning: " << m.kind << " map failed to load: " << m.path << std::endl;
+        }
     }
 
     glBindTexture(GL_TEXTURE_2D, baseColorID);
@@ -44,7 +56,7 @@ ModelTexture::ModelTexture(const std::string& baseColor,
  * @param fileName Path to the texture file.
  */
 ModelTexture::ModelTexture(const std::string& fileName) {
-    textureID = pgr::createTexture(fileName);
+    textureID = sylva::createTexture(fileName);
 
     if (textureID == 0) {
         std::cerr << "Failed to load texture: " << fileName << std::endl;

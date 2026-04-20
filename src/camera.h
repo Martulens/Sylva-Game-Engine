@@ -6,7 +6,7 @@
 #ifndef CAMERA_CLASS_H
 #define CAMERA_CLASS_H
 
-#include "pgr.h"
+#include "sylva/sylva.h"
 #include "objects.h"
 
 class Player;
@@ -126,4 +126,4 @@ private:
  */
 glm::vec3 catmullRomSpline(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec3& p3, float t);
 
-#endif CAMERA_CLASS_H
+#endif // CAMERA_CLASS_H

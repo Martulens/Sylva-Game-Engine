@@ -6,11 +6,11 @@
 #ifndef DATA_H
 #define DATA_H
 
-#include "pgr.h"
+#include "sylva/sylva.h"
 #include <stdio.h>
 #include <vector>
 
- /** @brief Default window width */
+/** @brief Default window width */
 const int WINDOW_WIDTH = 1600;
 /** @brief Default window height */
 const int WINDOW_HEIGHT = 1000;
@@ -86,7 +86,7 @@ enum PlayerState {
 #define CAMERA_TRANSITION_DURATION 2.0f
 #define SKYBOX_CUBE_TEXTURE_FILE_PREFIX "textures/skybox/"
 
-#define MAX_BONES 100
+#define MAX_BONES 256
 #define MAX_BONES_PER_VERTEX 30
 
 #define TREE_GENERATION_RADIUS 50

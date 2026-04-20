@@ -10,7 +10,7 @@
 
 #include "data.h"
 #include "objects.h"
-#include "pgr.h"
+#include "sylva/sylva.h"
 
 /**
  * @brief Constructs a renderable object with full resource initialization.
@@ -117,9 +117,9 @@ Skybox::Skybox(std::string vert, std::string frag) {
 
     for (int i = 0; i < 6; ++i) {
         std::cout << "[Skybox] Loading face: " << faces[i] << std::endl;
-        if (!pgr::loadTexImage2D(faces[i], targets[i])) {
+        if (!sylva::loadTexImage2D(faces[i], targets[i])) {
             std::cerr << "[Skybox] Failed to load: " << faces[i] << std::endl;
-            pgr::dieWithError("Skybox texture loading failed");
+            sylva::dieWithError("Skybox texture loading failed");
         }
     }
 
@@ -277,7 +277,8 @@ void Object::draw() {
  */
 Player::Player(glm::vec3 pos, glm::vec3 dir, MeshGeometry* mesh, ModelTexture* tex, ShaderProgram* s) {
     position = pos;
-    direction = dir;
+    direction = glm::normalize(dir);
+    renderFacingDirection = direction;
     geometry = mesh;
     texture = tex;
     shader = s;

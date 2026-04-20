@@ -4,7 +4,7 @@
  */
 
 #include "camera.h"
-#include "pgr.h"
+#include "sylva/sylva.h"
 #include <iostream>
 
  /**

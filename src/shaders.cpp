@@ -31,11 +31,11 @@ void ShaderProgram::loadFloat(GLint location, float value) {
  */
 void ShaderProgram::init(const std::string& vert, const std::string& frag) {
     std::vector<GLuint> shaderList;
-    shaderList.push_back(pgr::createShaderFromFile(GL_VERTEX_SHADER, vert));
-    shaderList.push_back(pgr::createShaderFromFile(GL_FRAGMENT_SHADER, frag));
+    shaderList.push_back(sylva::createShaderFromFile(GL_VERTEX_SHADER, vert));
+    shaderList.push_back(sylva::createShaderFromFile(GL_FRAGMENT_SHADER, frag));
 
     std::cout << vert << " " << frag << std::endl;
-    program = pgr::createProgram(shaderList);
+    program = sylva::createProgram(shaderList);
 
     getAllUniforms();
     getSamplerUniforms();
@@ -93,5 +93,5 @@ void ShaderProgram::bindAttributes() {
  * @brief Destructor that deletes the shader program and associated shaders.
  */
 ShaderProgram::~ShaderProgram() {
-    pgr::deleteProgramAndShaders(program);
+    sylva::deleteProgramAndShaders(program);
 }
